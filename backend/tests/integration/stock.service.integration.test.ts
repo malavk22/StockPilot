@@ -8,11 +8,17 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import bcrypt from "bcryptjs";
 import prisma from "../../src/db.js";
-import { recordMovement, getCurrentStock, getLowStockProducts } from "../../src/services/stock.service.js";
+import {
+  recordMovement,
+  transferStock,
+  getCurrentStock,
+  getLowStockProducts,
+} from "../../src/services/stock.service.js";
 import { AppError } from "../../src/errors/app-error.js";
 
 let userId: string;
 let warehouseId: string;
+let secondWarehouseId: string;
 let productId: string;
 
 beforeEach(async () => {
@@ -34,6 +40,9 @@ beforeEach(async () => {
 
   const warehouse = await prisma.warehouse.create({ data: { name: "Test Warehouse" } });
   warehouseId = warehouse.id;
+
+  const secondWarehouse = await prisma.warehouse.create({ data: { name: "Second Warehouse" } });
+  secondWarehouseId = secondWarehouse.id;
 
   const product = await prisma.product.create({
     data: { sku: "TEST-SKU", name: "Test Widget", lowStockThreshold: 5 },
@@ -81,6 +90,37 @@ describe("recordMovement", () => {
       userId
     );
     expect(await getCurrentStock(productId)).toBe(8);
+  });
+});
+
+describe("transferStock", () => {
+  it("moves stock between warehouses without changing the product's total", async () => {
+    await recordMovement({ type: "IN", productId, warehouseId, quantity: 10 }, userId);
+
+    await transferStock(
+      { productId, fromWarehouseId: warehouseId, toWarehouseId: secondWarehouseId, quantity: 4 },
+      userId
+    );
+
+    expect(await getCurrentStock(productId, warehouseId)).toBe(6);
+    expect(await getCurrentStock(productId, secondWarehouseId)).toBe(4);
+    // Total across all warehouses is unchanged by a transfer.
+    expect(await getCurrentStock(productId)).toBe(10);
+  });
+
+  it("rejects a transfer that would push the source warehouse negative", async () => {
+    await recordMovement({ type: "IN", productId, warehouseId, quantity: 3 }, userId);
+
+    await expect(
+      transferStock(
+        { productId, fromWarehouseId: warehouseId, toWarehouseId: secondWarehouseId, quantity: 10 },
+        userId
+      )
+    ).rejects.toThrow(AppError);
+
+    // Neither leg of the transfer should have been written.
+    expect(await getCurrentStock(productId, warehouseId)).toBe(3);
+    expect(await getCurrentStock(productId, secondWarehouseId)).toBe(0);
   });
 });
 
