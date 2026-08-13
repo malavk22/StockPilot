@@ -1,6 +1,7 @@
 // client/src/pages/WarehousesPage.tsx
 
 import { useEffect, useState, type FormEvent } from "react";
+import { Plus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getWarehouses, createWarehouse } from "../api/warehouse.api";
 import { getErrorMessage } from "../api/error";
@@ -42,11 +43,16 @@ export default function WarehousesPage() {
 
   return (
     <div>
-      <h2>Warehouses</h2>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Warehouses</h1>
+          <p className="page-subtitle">Locations where stock is held.</p>
+        </div>
+      </div>
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      <form className="inline-form" onSubmit={handleSubmit}>
+      <form className="inline-form card" onSubmit={handleSubmit}>
         <label>
           Name
           <input value={name} onChange={(e) => setName(e.target.value)} required />
@@ -56,26 +62,36 @@ export default function WarehousesPage() {
           <input value={location} onChange={(e) => setLocation(e.target.value)} />
         </label>
         <button type="submit" className="btn btn-primary" disabled={submitting}>
+          <Plus size={16} />
           {submitting ? "Adding..." : "Add warehouse"}
         </button>
       </form>
 
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Location</th>
-          </tr>
-        </thead>
-        <tbody>
-          {warehouses.map((w) => (
-            <tr key={w.id}>
-              <td>{w.name}</td>
-              <td>{w.location ?? "—"}</td>
+      <div className="card">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Location</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {warehouses.map((w) => (
+              <tr key={w.id}>
+                <td>{w.name}</td>
+                <td>{w.location ?? "—"}</td>
+              </tr>
+            ))}
+            {warehouses.length === 0 && (
+              <tr>
+                <td colSpan={2} className="empty-state">
+                  No warehouses yet — add one above.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

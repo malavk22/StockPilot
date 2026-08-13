@@ -26,7 +26,7 @@ export interface Product {
   currentStock: number;
 }
 
-export type MovementType = "IN" | "OUT" | "ADJUSTMENT";
+export type MovementType = "IN" | "OUT" | "ADJUSTMENT" | "TRANSFER_IN" | "TRANSFER_OUT";
 
 export interface StockMovement {
   id: string;
@@ -45,4 +45,18 @@ export interface ApiError {
   errorCode: string;
   message: string;
   details?: Record<string, string>;
+}
+
+export interface DashboardSummary {
+  kpis: {
+    totalProducts: number;
+    totalWarehouses: number;
+    totalStockUnits: number;
+    lowStockCount: number;
+    movementsToday: number;
+  };
+  movementsByType: Array<{ type: MovementType; count: number }>;
+  dailyMovements: Array<{ date: string; totalIn: number; totalOut: number }>;
+  topProducts: Array<{ id: string; sku: string; name: string; volume: number }>;
+  recentActivity: StockMovement[];
 }

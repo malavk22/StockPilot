@@ -20,3 +20,20 @@ export function recordMovement(
 ) {
   return apiFetch<StockMovement>("/stock-movements", { method: "POST", token, body: input });
 }
+
+export function transferStock(
+  token: string,
+  input: {
+    productId: string;
+    fromWarehouseId: string;
+    toWarehouseId: string;
+    quantity: number;
+    reason?: string;
+  }
+) {
+  return apiFetch<{ out: StockMovement; in: StockMovement }>("/stock-movements/transfer", {
+    method: "POST",
+    token,
+    body: input,
+  });
+}
