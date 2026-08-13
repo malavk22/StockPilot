@@ -32,8 +32,11 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
 export const getProductById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const product = await productService.getProductOrThrow(id as string);
-  const currentStock = await stockService.getCurrentStock(product.id);
-  res.status(HTTP_STATUS.OK).json({ ...product, currentStock });
+  const [currentStock, stockByWarehouse] = await Promise.all([
+    stockService.getCurrentStock(product.id),
+    stockService.getStockByWarehouse(product.id),
+  ]);
+  res.status(HTTP_STATUS.OK).json({ ...product, currentStock, stockByWarehouse });
 });
 
 export const getLowStockProducts = asyncHandler(async (_req: Request, res: Response) => {

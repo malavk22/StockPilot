@@ -173,6 +173,34 @@ export async function getCurrentStock(productId: string, warehouseId?: string) {
   return result._sum.quantity ?? 0;
 }
 
+/**
+ * A product's stock broken down by warehouse (only warehouses that have at
+ * least one movement for this product are included). Feeds the product
+ * detail page's "where is this actually sitting" view.
+ */
+export async function getStockByWarehouse(productId: string) {
+  const rows = await prisma.stockMovement.groupBy({
+    by: ["warehouseId"],
+    where: { productId },
+    _sum: { quantity: true },
+  });
+
+  const warehouses = await prisma.warehouse.findMany({
+    where: { id: { in: rows.map((r) => r.warehouseId) } },
+    select: { id: true, name: true },
+  });
+  const nameById = new Map(warehouses.map((w) => [w.id, w.name]));
+
+  return rows
+    .map((r) => ({
+      warehouseId: r.warehouseId,
+      warehouseName: nameById.get(r.warehouseId) ?? "Unknown",
+      quantity: r._sum.quantity ?? 0,
+    }))
+    .filter((r) => r.quantity !== 0)
+    .sort((a, b) => b.quantity - a.quantity);
+}
+
 export async function listMovements(filters: {
   productId?: string;
   warehouseId?: string;
