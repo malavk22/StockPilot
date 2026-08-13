@@ -24,4 +24,4 @@ Thumbs.db
 *.log
 
 # Prisma
-server/prisma/dev.db
+backend/prisma/dev.db

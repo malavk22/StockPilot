@@ -22,7 +22,7 @@ This trades a small amount of query complexity for two guarantees a mutable coun
 ## Project structure
 
 ```
-server/
+backend/
   prisma/           # schema + migrations
   src/
     config/         # env, http/CORS config
@@ -30,20 +30,24 @@ server/
     errors/         # typed AppError + error codes
     middlewares/     # auth, validation, error handling
     routes/
+    controllers/
     services/       # business logic
-client/              # React frontend (Vite)
+frontend/            # React frontend (Vite)
 ```
 
 ## Running locally
 
 ```bash
 # Backend
-cd server
+cd backend
 npm install
 cp .env.example .env.local   # fill in DATABASE_URL and a real JWT_SECRET
 npx prisma migrate deploy
 npx prisma db seed           # creates one admin@stockpilot.dev account
 npm run dev                  # http://localhost:5100
-```
 
-Frontend setup instructions will be added once the client is scaffolded.
+# Frontend
+cd frontend
+npm install
+npm run dev                  # http://localhost:5173
+```
