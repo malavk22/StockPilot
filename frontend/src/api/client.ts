@@ -10,8 +10,13 @@ import type { ApiError } from "../types";
 const BASE_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:5100").replace(/\/$/, "");
 
 export class ApiRequestError extends Error {
-  constructor(public status: number, public apiError: ApiError) {
+  status: number;
+  apiError: ApiError;
+
+  constructor(status: number, apiError: ApiError) {
     super(apiError.message);
+    this.status = status;
+    this.apiError = apiError;
   }
 }
 
