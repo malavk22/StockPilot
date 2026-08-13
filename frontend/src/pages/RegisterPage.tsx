@@ -2,9 +2,11 @@
 
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { UserPlus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { register as registerApi } from "../api/auth.api";
 import { getErrorMessage } from "../api/error";
+import { AuthShell } from "../components/AuthShell";
 
 export default function RegisterPage() {
   const { login } = useAuth();
@@ -39,23 +41,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-page">
-      <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>📦 StockPilot</h1>
-        <p className="auth-subtitle">Create an account</p>
-        <p className="auth-note">New accounts join as Staff. Admin access is granted separately.</p>
-
+    <AuthShell title="Create your account" subtitle="New accounts join as Staff — Admin access is granted separately.">
+      <form className="auth-form" onSubmit={handleSubmit}>
         {error && <div className="alert alert-error">{error}</div>}
 
-        <label>
-          First name
-          <input value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-        </label>
-
-        <label>
-          Last name
-          <input value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-        </label>
+        <div className="auth-form-row">
+          <label>
+            First name
+            <input value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+          </label>
+          <label>
+            Last name
+            <input value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+          </label>
+        </div>
 
         <label>
           Email
@@ -63,6 +62,7 @@ export default function RegisterPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.com"
             required
             autoComplete="email"
           />
@@ -74,13 +74,15 @@ export default function RegisterPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 8 characters"
             required
             autoComplete="new-password"
             minLength={8}
           />
         </label>
 
-        <button type="submit" className="btn btn-primary" disabled={isLoading}>
+        <button type="submit" className="btn btn-primary btn-full" disabled={isLoading}>
+          <UserPlus size={16} />
           {isLoading ? "Creating account..." : "Create account"}
         </button>
 
@@ -88,6 +90,6 @@ export default function RegisterPage() {
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
       </form>
-    </div>
+    </AuthShell>
   );
 }

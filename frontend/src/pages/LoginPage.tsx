@@ -2,9 +2,11 @@
 
 import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LogIn } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { login as loginApi } from "../api/auth.api";
 import { getErrorMessage } from "../api/error";
+import { AuthShell } from "../components/AuthShell";
 
 interface LocationState {
   from?: { pathname: string };
@@ -37,11 +39,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-page">
-      <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>📦 StockPilot</h1>
-        <p className="auth-subtitle">Sign in to manage inventory</p>
-
+    <AuthShell title="Welcome back" subtitle="Sign in to manage your inventory.">
+      <form className="auth-form" onSubmit={handleSubmit}>
         {error && <div className="alert alert-error">{error}</div>}
 
         <label>
@@ -50,6 +49,7 @@ export default function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.com"
             required
             autoComplete="email"
           />
@@ -61,19 +61,25 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
             required
             autoComplete="current-password"
           />
         </label>
 
-        <button type="submit" className="btn btn-primary" disabled={isLoading}>
+        <button type="submit" className="btn btn-primary btn-full" disabled={isLoading}>
+          <LogIn size={16} />
           {isLoading ? "Signing in..." : "Sign in"}
         </button>
 
         <p className="auth-footer">
-          Don't have an account? <Link to="/register">Register</Link>
+          Don't have an account? <Link to="/register">Create one</Link>
         </p>
+
+        <div className="auth-demo-hint">
+          <strong>Demo:</strong> admin@stockpilot.dev / admin12345
+        </div>
       </form>
-    </div>
+    </AuthShell>
   );
 }

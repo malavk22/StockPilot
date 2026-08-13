@@ -260,7 +260,7 @@ function MovementForm({
     <div className="modal-backdrop" onClick={onClose}>
       <form className="modal-card" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
         <h3>Record movement — {product.name}</h3>
-        <p className="auth-note">Current stock: {product.currentStock}</p>
+        <p className="modal-subtitle">Current stock: {product.currentStock}</p>
 
         {error && <div className="alert alert-error">{error}</div>}
 
@@ -364,7 +364,7 @@ function TransferForm({
     <div className="modal-backdrop" onClick={onClose}>
       <form className="modal-card" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
         <h3>Transfer stock — {product.name}</h3>
-        <p className="auth-note">Total stock across all warehouses: {product.currentStock}</p>
+        <p className="modal-subtitle">Total stock across all warehouses: {product.currentStock}</p>
 
         {error && <div className="alert alert-error">{error}</div>}
 

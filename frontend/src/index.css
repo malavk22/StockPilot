@@ -96,66 +96,158 @@ select {
   font-size: 13px;
 }
 
-/* Auth pages */
-.auth-page {
+/* Auth pages: split panel — brand on the left, form on the right */
+.auth-split {
   min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.auth-brand-panel {
+  background: radial-gradient(circle at 20% 15%, #312e81, var(--color-sidebar) 60%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+}
+.auth-brand-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 80% 85%, rgba(79, 70, 229, 0.35), transparent 45%),
+    radial-gradient(circle at 10% 90%, rgba(99, 102, 241, 0.25), transparent 40%);
+  pointer-events: none;
+}
+.auth-brand-panel-inner {
+  position: relative;
+  max-width: 400px;
+}
+.auth-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 40px;
+}
+.auth-brand-panel-inner h2 {
+  font-size: 28px;
+  line-height: 1.3;
+  margin: 0 0 32px;
+  font-weight: 700;
+}
+.auth-feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.auth-feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-sidebar-muted);
+}
+.auth-feature-list svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #a5b4fc;
+}
+
+.auth-form-panel {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(79, 70, 229, 0.12), transparent 40%),
-    radial-gradient(circle at 85% 80%, rgba(79, 70, 229, 0.1), transparent 40%),
-    var(--color-bg);
-}
-.auth-card {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
-  padding: 32px;
+}
+.auth-form-wrap {
   width: 100%;
-  max-width: 380px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  max-width: 360px;
 }
-.auth-card h1 {
-  margin: 0;
-  font-size: 22px;
+.auth-form-header {
+  margin-bottom: 28px;
 }
-.auth-subtitle {
+.auth-form-header h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+}
+.auth-form-header p {
   margin: 0;
   color: var(--color-text-muted);
-}
-.auth-note {
-  font-size: 13px;
-  color: var(--color-text-muted);
-  margin: 0;
-}
-.auth-footer {
-  margin-top: 8px;
   font-size: 14px;
-  text-align: center;
 }
-.auth-card label {
+
+.auth-form {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 16px;
+}
+.auth-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   font-size: 13px;
   font-weight: 500;
 }
-.auth-card input,
-.auth-card select {
-  padding: 9px 11px;
+.auth-form input {
+  padding: 10px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
 }
-.auth-card input:focus,
-.auth-card select:focus {
+.auth-form input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+.btn-full {
+  width: 100%;
+  justify-content: center;
+  padding: 11px 16px;
+  margin-top: 4px;
+}
+.auth-footer {
+  margin: 4px 0 0;
+  font-size: 14px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.auth-footer a {
+  color: var(--color-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+.auth-demo-hint {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .auth-split {
+    grid-template-columns: 1fr;
+  }
+  .auth-brand-panel {
+    display: none;
+  }
 }
 
 /* App shell: sidebar + content */
@@ -592,6 +684,11 @@ select {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.modal-subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
 }
 .modal-card label {
   display: flex;
