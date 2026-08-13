@@ -15,7 +15,11 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: 'admin@stockpilot.dev' },
-    update: { passwordHash },
+    // update role too, not just the password — otherwise re-running this
+    // seed against a row that was previously created some other way (e.g.
+    // self-registration, which always creates STAFF) silently leaves it
+    // as STAFF instead of enforcing ADMIN.
+    update: { passwordHash, role: 'ADMIN' },
     create: {
       email: 'admin@stockpilot.dev',
       firstName: 'System',
@@ -26,10 +30,9 @@ async function main() {
   });
 
   await prisma.warehouse.upsert({
-    where: { id: 'warehouse-main' },
+    where: { name: 'Main Warehouse' },
     update: {},
     create: {
-      id: 'warehouse-main',
       name: 'Main Warehouse',
       location: 'Default location',
     },

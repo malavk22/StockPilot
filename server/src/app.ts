@@ -8,7 +8,11 @@ import rateLimit from "express-rate-limit";
 import { httpConfig } from "./config/http.config.js";
 import prisma from "./db.js";
 import authRoutes from "./routes/auth.routes.js";
+import warehouseRoutes from "./routes/warehouses.routes.js";
+import productRoutes from "./routes/products.routes.js";
+import stockMovementRoutes from "./routes/stock-movements.routes.js";
 import { errorHandler } from "./middlewares/error-handler.js";
+import { authMiddleware } from "./middlewares/auth.middleware.js";
 
 const app = express();
 
@@ -32,11 +36,11 @@ app.get("/health", async (_req, res) => {
 
 app.use("/auth", authLimiter, authRoutes);
 
-// Protected routes will be mounted here behind authMiddleware as they're built:
-// app.use(authMiddleware);
-// app.use('/products', productRoutes);
-// app.use('/warehouses', warehouseRoutes);
-// app.use('/stock-movements', stockMovementRoutes);
+// Protected routes — JWT required from here on.
+app.use(authMiddleware);
+app.use("/warehouses", warehouseRoutes);
+app.use("/products", productRoutes);
+app.use("/stock-movements", stockMovementRoutes);
 
 app.use(errorHandler);
 
