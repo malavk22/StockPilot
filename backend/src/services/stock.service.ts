@@ -14,6 +14,16 @@ export type MovementInput =
   | { type: "ADJUSTMENT"; productId: string; warehouseId: string; quantity: number; reason: string };
 
 /**
+ * Converts a movement's user-facing quantity into the signed value stored
+ * in the ledger. Pulled out as a pure function so the sign rule (the one
+ * bit of this file that's easy to get subtly wrong) is independently
+ * testable without a database.
+ */
+export function computeSignedQuantity(type: MovementInput["type"], quantity: number): number {
+  return type === "OUT" ? -quantity : quantity;
+}
+
+/**
  * Records a stock movement.
  *
  * Concurrency safety: runs in a SERIALIZABLE transaction. Two requests
@@ -30,7 +40,7 @@ export async function recordMovement(input: MovementInput, actorUserId: string) 
   await getProductOrThrow(input.productId);
   await getWarehouseOrThrow(input.warehouseId);
 
-  const signedQuantity = input.type === "OUT" ? -input.quantity : input.quantity;
+  const signedQuantity = computeSignedQuantity(input.type, input.quantity);
 
   try {
     return await prisma.$transaction(
