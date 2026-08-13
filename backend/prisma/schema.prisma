@@ -55,6 +55,7 @@ model Product {
   name              String
   description       String?
   unit              String   @default("unit") // e.g. "unit", "kg", "box"
+  price             Decimal  @default(0) @db.Decimal(10, 2) // unit price, for inventory value reporting
   lowStockThreshold Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

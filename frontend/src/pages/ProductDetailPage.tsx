@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, PackagePlus, ArrowLeftRight, Warehouse as WarehouseIcon } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { getProductById } from "../api/product.api";
 import { getWarehouses } from "../api/warehouse.api";
 import { getMovements } from "../api/stock.api";
 import { getErrorMessage } from "../api/error";
+import { formatCurrency } from "../utils/format";
 import { MovementFormModal } from "../components/MovementFormModal";
 import { TransferFormModal } from "../components/TransferFormModal";
 import type { MovementType, ProductDetail, StockMovement, Warehouse } from "../types";
@@ -24,6 +26,7 @@ const TYPE_FILTERS: Array<{ value: MovementType | "ALL"; label: string }> = [
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { token } = useAuth();
+  const { addToast } = useToast();
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [movements, setMovements] = useState<StockMovement[]>([]);
@@ -103,14 +106,20 @@ export default function ProductDetailPage() {
         </div>
         <div className="kpi-card">
           <div>
-            <div className="kpi-value">{product.lowStockThreshold}</div>
-            <div className="kpi-label">Low Stock Threshold</div>
+            <div className="kpi-value">{formatCurrency(product.price)}</div>
+            <div className="kpi-label">Unit Price</div>
           </div>
         </div>
         <div className="kpi-card">
           <div>
-            <div className="kpi-value">{product.stockByWarehouse.length}</div>
-            <div className="kpi-label">Warehouses Stocking This</div>
+            <div className="kpi-value">{formatCurrency(product.value)}</div>
+            <div className="kpi-label">Inventory Value</div>
+          </div>
+        </div>
+        <div className="kpi-card">
+          <div>
+            <div className="kpi-value">{product.lowStockThreshold}</div>
+            <div className="kpi-label">Low Stock Threshold</div>
           </div>
         </div>
       </div>
@@ -198,6 +207,7 @@ export default function ProductDetailPage() {
           onClose={() => setShowMovement(false)}
           onRecorded={() => {
             setShowMovement(false);
+            addToast("Movement recorded");
             refresh();
           }}
         />
@@ -211,6 +221,7 @@ export default function ProductDetailPage() {
           onClose={() => setShowTransfer(false)}
           onTransferred={() => {
             setShowTransfer(false);
+            addToast("Stock transferred");
             refresh();
           }}
         />

@@ -3,12 +3,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Plus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { getWarehouses, createWarehouse } from "../api/warehouse.api";
 import { getErrorMessage } from "../api/error";
 import type { Warehouse } from "../types";
 
 export default function WarehousesPage() {
   const { token } = useAuth();
+  const { addToast } = useToast();
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
@@ -33,6 +35,7 @@ export default function WarehousesPage() {
       await createWarehouse(token!, { name, location: location || undefined });
       setName("");
       setLocation("");
+      addToast("Warehouse added");
       await refresh();
     } catch (err) {
       setError(getErrorMessage(err));

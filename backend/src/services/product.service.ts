@@ -17,6 +17,7 @@ export async function createProduct(data: {
   name: string;
   description?: string;
   unit: string;
+  price: number;
   lowStockThreshold: number;
 }) {
   const existing = await prisma.product.findUnique({ where: { sku: data.sku } });

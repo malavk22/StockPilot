@@ -805,3 +805,45 @@ select {
     display: none;
   }
 }
+
+/* Toasts */
+.toast-stack {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 100;
+}
+.toast {
+  background: var(--color-text);
+  color: white;
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  max-width: 320px;
+  animation: toast-in 180ms ease-out;
+}
+.toast--success {
+  background: #14532d;
+}
+.toast--error {
+  background: #7f1d1d;
+}
+.toast--info {
+  background: var(--color-sidebar);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

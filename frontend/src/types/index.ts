@@ -22,8 +22,10 @@ export interface Product {
   name: string;
   description: string | null;
   unit: string;
+  price: string; // Decimal serializes as a string
   lowStockThreshold: number;
   currentStock: number;
+  value: number;
 }
 
 export interface ProductDetail extends Product {
@@ -56,6 +58,7 @@ export interface DashboardSummary {
     totalProducts: number;
     totalWarehouses: number;
     totalStockUnits: number;
+    totalInventoryValue: number;
     lowStockCount: number;
     movementsToday: number;
   };

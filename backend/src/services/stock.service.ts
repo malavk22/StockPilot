@@ -1,6 +1,6 @@
 // server/src/services/stock.service.ts
 
-import { Prisma } from "@prisma/client";
+import { Prisma, type MovementType } from "@prisma/client";
 import prisma from "../db.js";
 import { AppError } from "../errors/app-error.js";
 import { ERROR_CODE } from "../errors/error-codes.js";
@@ -204,12 +204,14 @@ export async function getStockByWarehouse(productId: string) {
 export async function listMovements(filters: {
   productId?: string;
   warehouseId?: string;
+  type?: MovementType;
   limit?: number;
 }) {
   return prisma.stockMovement.findMany({
     where: {
       ...(filters.productId ? { productId: filters.productId } : {}),
       ...(filters.warehouseId ? { warehouseId: filters.warehouseId } : {}),
+      ...(filters.type ? { type: filters.type } : {}),
     },
     include: {
       product: { select: { id: true, sku: true, name: true } },

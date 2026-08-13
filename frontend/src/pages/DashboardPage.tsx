@@ -26,13 +26,16 @@ import {
   ArrowUpCircle,
   Settings2,
   ArrowLeftRight,
+  DollarSign,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { getDashboardSummary } from "../api/dashboard.api";
 import { getProducts, createProduct } from "../api/product.api";
 import { getWarehouses } from "../api/warehouse.api";
 import { recordMovement } from "../api/stock.api";
 import { getErrorMessage } from "../api/error";
+import { formatCurrency } from "../utils/format";
 import type { DashboardSummary, MovementType, Product, Warehouse } from "../types";
 
 const MOVEMENT_TYPE_COLORS: Record<string, string> = {
@@ -55,6 +58,7 @@ function timeAgo(iso: string): string {
 
 export default function DashboardPage() {
   const { token, user } = useAuth();
+  const { addToast } = useToast();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -111,6 +115,12 @@ export default function DashboardPage() {
         <KpiCard icon={<Boxes size={18} />} label="Products" value={kpis.totalProducts} />
         <KpiCard icon={<WarehouseIcon size={18} />} label="Warehouses" value={kpis.totalWarehouses} />
         <KpiCard icon={<Layers size={18} />} label="Total Stock Units" value={kpis.totalStockUnits} />
+        <KpiCard
+          icon={<DollarSign size={18} />}
+          label="Inventory Value"
+          value={kpis.totalInventoryValue}
+          currency
+        />
         <KpiCard
           icon={<AlertTriangle size={18} />}
           label="Low Stock Items"
@@ -261,6 +271,7 @@ export default function DashboardPage() {
           onClose={() => setShowAddProduct(false)}
           onCreated={() => {
             setShowAddProduct(false);
+            addToast("Product added");
             refresh();
           }}
         />
@@ -274,6 +285,7 @@ export default function DashboardPage() {
           onClose={() => setShowRecordMovement(false)}
           onRecorded={() => {
             setShowRecordMovement(false);
+            addToast("Movement recorded");
             refresh();
           }}
         />
@@ -287,17 +299,19 @@ function KpiCard({
   label,
   value,
   tone = "default",
+  currency = false,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   tone?: "default" | "warning";
+  currency?: boolean;
 }) {
   return (
     <div className={`kpi-card ${tone === "warning" ? "kpi-card--warning" : ""}`}>
       <div className="kpi-icon">{icon}</div>
       <div>
-        <div className="kpi-value">{value.toLocaleString()}</div>
+        <div className="kpi-value">{currency ? formatCurrency(value) : value.toLocaleString()}</div>
         <div className="kpi-label">{label}</div>
       </div>
     </div>
@@ -315,6 +329,7 @@ function QuickAddProductModal({
 }) {
   const [sku, setSku] = useState("");
   const [name, setName] = useState("");
+  const [price, setPrice] = useState(0);
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -324,7 +339,7 @@ function QuickAddProductModal({
     setSubmitting(true);
     setError("");
     try {
-      await createProduct(token, { sku, name, lowStockThreshold });
+      await createProduct(token, { sku, name, price, lowStockThreshold });
       onCreated();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -345,6 +360,16 @@ function QuickAddProductModal({
         <label>
           Name
           <input value={name} onChange={(e) => setName(e.target.value)} required />
+        </label>
+        <label>
+          Unit price
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            value={price}
+            onChange={(e) => setPrice(Number(e.target.value))}
+          />
         </label>
         <label>
           Low stock threshold

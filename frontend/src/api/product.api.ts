@@ -20,7 +20,14 @@ export function getLowStockProducts(token: string) {
 
 export function createProduct(
   token: string,
-  input: { sku: string; name: string; description?: string; unit?: string; lowStockThreshold?: number }
+  input: {
+    sku: string;
+    name: string;
+    description?: string;
+    unit?: string;
+    price?: number;
+    lowStockThreshold?: number;
+  }
 ) {
   return apiFetch<Product>("/products", { method: "POST", token, body: input });
 }

@@ -12,6 +12,7 @@ export interface DashboardSummary {
     totalProducts: number;
     totalWarehouses: number;
     totalStockUnits: number;
+    totalInventoryValue: number;
     lowStockCount: number;
     movementsToday: number;
   };
@@ -26,22 +27,39 @@ function startOfTodayUtc(): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 
+async function getTotalInventoryValue(): Promise<number> {
+  const rows = await prisma.$queryRaw<Array<{ value: string | null }>>`
+    SELECT COALESCE(SUM(p.price * agg.stock), 0) AS value
+    FROM "Product" p
+    LEFT JOIN (
+      SELECT "productId", SUM(quantity) AS stock
+      FROM "StockMovement"
+      GROUP BY "productId"
+    ) agg ON agg."productId" = p.id
+    WHERE p."deletedAt" IS NULL;
+  `;
+  return Number(rows[0]?.value ?? 0);
+}
+
 async function getKpis() {
-  const [totalProducts, totalWarehouses, stockAgg, lowStock, movementsToday] = await Promise.all([
-    prisma.product.count({ where: { deletedAt: null } }),
-    prisma.warehouse.count({ where: { deletedAt: null } }),
-    // Sum of every signed movement = total units currently in inventory.
-    // Transfers net to zero (a TRANSFER_OUT and its paired TRANSFER_IN
-    // cancel out), so this correctly reflects real stock, not "activity".
-    prisma.stockMovement.aggregate({ _sum: { quantity: true } }),
-    getLowStockProducts(),
-    prisma.stockMovement.count({ where: { createdAt: { gte: startOfTodayUtc() } } }),
-  ]);
+  const [totalProducts, totalWarehouses, stockAgg, totalInventoryValue, lowStock, movementsToday] =
+    await Promise.all([
+      prisma.product.count({ where: { deletedAt: null } }),
+      prisma.warehouse.count({ where: { deletedAt: null } }),
+      // Sum of every signed movement = total units currently in inventory.
+      // Transfers net to zero (a TRANSFER_OUT and its paired TRANSFER_IN
+      // cancel out), so this correctly reflects real stock, not "activity".
+      prisma.stockMovement.aggregate({ _sum: { quantity: true } }),
+      getTotalInventoryValue(),
+      getLowStockProducts(),
+      prisma.stockMovement.count({ where: { createdAt: { gte: startOfTodayUtc() } } }),
+    ]);
 
   return {
     totalProducts,
     totalWarehouses,
     totalStockUnits: stockAgg._sum.quantity ?? 0,
+    totalInventoryValue,
     lowStockCount: lowStock.length,
     movementsToday,
   };

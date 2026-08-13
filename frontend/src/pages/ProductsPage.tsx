@@ -4,15 +4,18 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Plus, ArrowLeftRight, PackagePlus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { getProducts, createProduct } from "../api/product.api";
 import { getWarehouses } from "../api/warehouse.api";
 import { getErrorMessage } from "../api/error";
+import { formatCurrency } from "../utils/format";
 import { MovementFormModal } from "../components/MovementFormModal";
 import { TransferFormModal } from "../components/TransferFormModal";
 import type { Product, Warehouse } from "../types";
 
 export default function ProductsPage() {
   const { token, user } = useAuth();
+  const { addToast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +82,7 @@ export default function ProductsPage() {
           token={token!}
           onCreated={() => {
             setShowAddProduct(false);
+            addToast("Product added");
             refresh();
           }}
           onError={setError}
@@ -92,6 +96,8 @@ export default function ProductsPage() {
               <th>SKU</th>
               <th>Name</th>
               <th>Stock</th>
+              <th>Price</th>
+              <th>Value</th>
               <th>Threshold</th>
               <th></th>
             </tr>
@@ -108,6 +114,8 @@ export default function ProductsPage() {
                 <td className="mono">
                   {p.currentStock} {p.unit}
                 </td>
+                <td className="mono">{formatCurrency(p.price)}</td>
+                <td className="mono">{formatCurrency(p.value)}</td>
                 <td className="mono">{p.lowStockThreshold}</td>
                 <td>
                   <div className="row-actions">
@@ -125,7 +133,7 @@ export default function ProductsPage() {
             ))}
             {products.length === 0 && (
               <tr>
-                <td colSpan={5} className="empty-state">
+                <td colSpan={7} className="empty-state">
                   No products yet{isAdmin ? " — add one above." : "."}
                 </td>
               </tr>
@@ -142,6 +150,7 @@ export default function ProductsPage() {
           onClose={() => setMovementTarget(null)}
           onRecorded={() => {
             setMovementTarget(null);
+            addToast("Movement recorded");
             refresh();
           }}
         />
@@ -155,6 +164,7 @@ export default function ProductsPage() {
           onClose={() => setTransferTarget(null)}
           onTransferred={() => {
             setTransferTarget(null);
+            addToast("Stock transferred");
             refresh();
           }}
         />
@@ -174,6 +184,7 @@ function AddProductForm({
 }) {
   const [sku, setSku] = useState("");
   const [name, setName] = useState("");
+  const [price, setPrice] = useState(0);
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [submitting, setSubmitting] = useState(false);
 
@@ -181,7 +192,7 @@ function AddProductForm({
     e.preventDefault();
     setSubmitting(true);
     try {
-      await createProduct(token, { sku, name, lowStockThreshold });
+      await createProduct(token, { sku, name, price, lowStockThreshold });
       onCreated();
     } catch (err) {
       onError(getErrorMessage(err));
@@ -199,6 +210,16 @@ function AddProductForm({
       <label>
         Name
         <input value={name} onChange={(e) => setName(e.target.value)} required />
+      </label>
+      <label>
+        Unit price
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          value={price}
+          onChange={(e) => setPrice(Number(e.target.value))}
+        />
       </label>
       <label>
         Low stock threshold
