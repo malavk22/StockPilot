@@ -71,9 +71,12 @@ model Product {
 // Design decision: current stock is NEVER stored as a mutable counter.
 // It is always derived by summing StockMovement.quantity (signed) for a
 // given product (+ warehouse). This is an append-only audit log:
-//   - IN         → positive quantity  (restock, purchase received)
-//   - OUT        → negative quantity  (sale, usage, damage)
-//   - ADJUSTMENT → signed quantity    (manual correction, with a reason)
+//   - IN          → positive quantity  (restock, purchase received)
+//   - OUT         → negative quantity  (sale, usage, damage)
+//   - ADJUSTMENT  → signed quantity    (manual correction, with a reason)
+//   - TRANSFER_IN / TRANSFER_OUT → a warehouse-to-warehouse transfer is
+//     recorded as two linked rows (one of each), created atomically so the
+//     product's total stock is unaffected — only its location changes.
 //
 // Benefits over a mutable `quantity` column:
 //   1. Correctness under concurrent writes — two simultaneous stock
@@ -107,4 +110,6 @@ enum MovementType {
   IN
   OUT
   ADJUSTMENT
+  TRANSFER_IN
+  TRANSFER_OUT
 }

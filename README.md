@@ -54,14 +54,6 @@ npm run dev                  # http://localhost:5173
 
 Demo accounts (seeded): `admin@stockpilot.dev` (ADMIN), password `admin12345`. New sign-ups via the Register page always join as STAFF — there is no client-controlled path to ADMIN.
 
-## Running with Docker
-
-```bash
-JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('base64'))") docker compose up --build
-```
-
-Runs Postgres, the backend API (migrated + seeded on startup), and the frontend (served via nginx) together. Frontend: http://localhost:8080, backend: http://localhost:5100.
-
 ## Testing
 
 ```bash

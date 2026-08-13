@@ -3,7 +3,7 @@
 import { Router } from "express";
 import * as stockController from "../controllers/stock.controller.js";
 import { validate } from "../middlewares/validate.js";
-import { createStockMovementSchema } from "../schemas/stock-movement.schema.js";
+import { createStockMovementSchema, transferStockSchema } from "../schemas/stock-movement.schema.js";
 
 const router = Router();
 
@@ -12,5 +12,6 @@ const router = Router();
 // Admins would make the app useless for actual warehouse staff.
 router.get("/", stockController.getMovements);
 router.post("/", validate(createStockMovementSchema), stockController.createMovement);
+router.post("/transfer", validate(transferStockSchema), stockController.transferStock);
 
 export default router;

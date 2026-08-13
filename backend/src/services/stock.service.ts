@@ -42,33 +42,104 @@ export async function recordMovement(input: MovementInput, actorUserId: string) 
 
   const signedQuantity = computeSignedQuantity(input.type, input.quantity);
 
-  try {
-    return await prisma.$transaction(
-      async (tx) => {
-        if (input.type === "OUT") {
-          const current = await getCurrentStockInTx(tx, input.productId, input.warehouseId);
-          if (current + signedQuantity < 0) {
-            throw new AppError(
-              `Insufficient stock: ${current} available, ${input.quantity} requested`,
-              HTTP_STATUS.CONFLICT,
-              ERROR_CODE.RESOURCE_CONFLICT
-            );
-          }
-        }
+  return runInSerializableTx(async (tx) => {
+    if (input.type === "OUT") {
+      const current = await getCurrentStockInTx(tx, input.productId, input.warehouseId);
+      if (current + signedQuantity < 0) {
+        throw new AppError(
+          `Insufficient stock: ${current} available, ${input.quantity} requested`,
+          HTTP_STATUS.CONFLICT,
+          ERROR_CODE.RESOURCE_CONFLICT
+        );
+      }
+    }
 
-        return tx.stockMovement.create({
-          data: {
-            productId: input.productId,
-            warehouseId: input.warehouseId,
-            type: input.type,
-            quantity: signedQuantity,
-            reason: input.reason,
-            createdById: actorUserId,
-          },
-        });
+    return tx.stockMovement.create({
+      data: {
+        productId: input.productId,
+        warehouseId: input.warehouseId,
+        type: input.type,
+        quantity: signedQuantity,
+        reason: input.reason,
+        createdById: actorUserId,
       },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
-    );
+    });
+  });
+}
+
+export interface TransferInput {
+  productId: string;
+  fromWarehouseId: string;
+  toWarehouseId: string;
+  quantity: number;
+  reason?: string;
+}
+
+/**
+ * Moves stock between two warehouses. Recorded as two linked ledger rows
+ * (TRANSFER_OUT at the source, TRANSFER_IN at the destination) created in
+ * one atomic, serializable transaction — either both are written or
+ * neither is. The product's total stock is unaffected; only its location
+ * changes. Reuses the same oversell guard as a regular OUT movement.
+ */
+export async function transferStock(input: TransferInput, actorUserId: string) {
+  await getProductOrThrow(input.productId);
+  await getWarehouseOrThrow(input.fromWarehouseId);
+  await getWarehouseOrThrow(input.toWarehouseId);
+
+  return runInSerializableTx(async (tx) => {
+    const current = await getCurrentStockInTx(tx, input.productId, input.fromWarehouseId);
+    if (current - input.quantity < 0) {
+      throw new AppError(
+        `Insufficient stock at source warehouse: ${current} available, ${input.quantity} requested`,
+        HTTP_STATUS.CONFLICT,
+        ERROR_CODE.RESOURCE_CONFLICT
+      );
+    }
+
+    const reason = input.reason ?? "Warehouse transfer";
+
+    const out = await tx.stockMovement.create({
+      data: {
+        productId: input.productId,
+        warehouseId: input.fromWarehouseId,
+        type: "TRANSFER_OUT",
+        quantity: -input.quantity,
+        reason,
+        createdById: actorUserId,
+      },
+    });
+
+    const inMovement = await tx.stockMovement.create({
+      data: {
+        productId: input.productId,
+        warehouseId: input.toWarehouseId,
+        type: "TRANSFER_IN",
+        quantity: input.quantity,
+        reason,
+        createdById: actorUserId,
+      },
+    });
+
+    return { out, in: inMovement };
+  });
+}
+
+/**
+ * Runs `fn` inside a SERIALIZABLE transaction and translates Postgres's
+ * serialization-failure error (P2034) into a 409 the client can retry.
+ *
+ * Shared by recordMovement and transferStock — both need the same
+ * concurrency guarantee: two conflicting writes against the same
+ * product/warehouse can't both succeed and silently corrupt the total.
+ */
+async function runInSerializableTx<T>(
+  fn: (tx: Prisma.TransactionClient) => Promise<T>
+): Promise<T> {
+  try {
+    return await prisma.$transaction(fn, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2034") {
       throw new AppError(
@@ -102,7 +173,11 @@ export async function getCurrentStock(productId: string, warehouseId?: string) {
   return result._sum.quantity ?? 0;
 }
 
-export async function listMovements(filters: { productId?: string; warehouseId?: string }) {
+export async function listMovements(filters: {
+  productId?: string;
+  warehouseId?: string;
+  limit?: number;
+}) {
   return prisma.stockMovement.findMany({
     where: {
       ...(filters.productId ? { productId: filters.productId } : {}),
@@ -114,6 +189,7 @@ export async function listMovements(filters: { productId?: string; warehouseId?:
       createdBy: { select: { id: true, email: true } },
     },
     orderBy: { createdAt: "desc" },
+    ...(filters.limit ? { take: filters.limit } : {}),
   });
 }
 

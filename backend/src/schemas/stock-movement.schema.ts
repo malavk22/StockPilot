@@ -33,3 +33,16 @@ export const createStockMovementSchema = z.discriminatedUnion("type", [
     reason: z.string().trim().min(1, "A reason is required for manual adjustments").max(500),
   }),
 ]);
+
+export const transferStockSchema = z
+  .object({
+    productId: z.string().uuid("Invalid product id"),
+    fromWarehouseId: z.string().uuid("Invalid source warehouse id"),
+    toWarehouseId: z.string().uuid("Invalid destination warehouse id"),
+    quantity: z.number().int().positive("Quantity must be a positive integer"),
+    reason: z.string().trim().max(500).optional(),
+  })
+  .refine((data) => data.fromWarehouseId !== data.toWarehouseId, {
+    message: "Source and destination warehouse must be different",
+    path: ["toWarehouseId"],
+  });
