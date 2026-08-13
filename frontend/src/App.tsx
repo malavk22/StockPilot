@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProductsPage from "./pages/ProductsPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
 import WarehousesPage from "./pages/WarehousesPage";
 
 function AppRoutes() {
@@ -22,6 +23,7 @@ function AppRoutes() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
             <Route path="/warehouses" element={<WarehousesPage />} />
           </Route>

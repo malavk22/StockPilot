@@ -1,10 +1,14 @@
 // client/src/api/product.api.ts
 
 import { apiFetch } from "./client";
-import type { Product } from "../types";
+import type { Product, ProductDetail } from "../types";
 
 export function getProducts(token: string) {
   return apiFetch<Product[]>("/products", { token });
+}
+
+export function getProductById(token: string, id: string) {
+  return apiFetch<ProductDetail>(`/products/${id}`, { token });
 }
 
 export function getLowStockProducts(token: string) {

@@ -26,6 +26,10 @@ export interface Product {
   currentStock: number;
 }
 
+export interface ProductDetail extends Product {
+  stockByWarehouse: Array<{ warehouseId: string; warehouseName: string; quantity: number }>;
+}
+
 export type MovementType = "IN" | "OUT" | "ADJUSTMENT" | "TRANSFER_IN" | "TRANSFER_OUT";
 
 export interface StockMovement {
