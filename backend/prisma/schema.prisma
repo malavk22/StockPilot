@@ -24,7 +24,9 @@ model User {
   updatedAt    DateTime @updatedAt
   deletedAt    DateTime?
 
-  stockMovements StockMovement[] @relation("MovementCreatedBy")
+  stockMovements     StockMovement[]  @relation("MovementCreatedBy")
+  purchaseOrdersMade PurchaseOrder[]  @relation("PurchaseOrderCreatedBy")
+  purchaseOrdersRecv PurchaseOrder[]  @relation("PurchaseOrderReceivedBy")
 }
 
 enum Role {
@@ -45,6 +47,7 @@ model Warehouse {
   deletedAt DateTime?
 
   stockMovements StockMovement[]
+  purchaseOrders PurchaseOrder[]
 
   @@index([name])
 }
@@ -57,13 +60,87 @@ model Product {
   unit              String   @default("unit") // e.g. "unit", "kg", "box"
   price             Decimal  @default(0) @db.Decimal(10, 2) // unit price, for inventory value reporting
   lowStockThreshold Int      @default(0)
+  supplierId        String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   deletedAt         DateTime?
 
-  stockMovements StockMovement[]
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id])
+  stockMovements     StockMovement[]
+  purchaseOrderLines PurchaseOrderLine[]
 
   @@index([sku])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Suppliers & Purchase Orders
+//
+// A purchase order is a draft until it's submitted, and its lines are
+// only ever turned into ledger entries once — on receipt. Receiving posts
+// one IN StockMovement per line (via the same recordMovement path as any
+// other stock-in), so a received PO shows up in the ledger exactly like a
+// manual restock would, just with the paper trail of what was ordered,
+// from whom, and at what cost.
+// ─────────────────────────────────────────────────────────────
+
+model Supplier {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  contactEmail String?
+  contactPhone String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
+
+  @@index([name])
+}
+
+model PurchaseOrder {
+  id           String              @id @default(uuid())
+  poNumber     String              @unique
+  supplierId   String
+  warehouseId  String
+  status       PurchaseOrderStatus @default(DRAFT)
+  notes        String?
+  createdById  String
+  receivedById String?
+  createdAt    DateTime            @default(now())
+  submittedAt  DateTime?
+  receivedAt   DateTime?
+  cancelledAt  DateTime?
+
+  supplier   Supplier            @relation(fields: [supplierId], references: [id])
+  warehouse  Warehouse           @relation(fields: [warehouseId], references: [id])
+  createdBy  User                @relation("PurchaseOrderCreatedBy", fields: [createdById], references: [id])
+  receivedBy User?               @relation("PurchaseOrderReceivedBy", fields: [receivedById], references: [id])
+  lines      PurchaseOrderLine[]
+
+  @@index([supplierId])
+  @@index([warehouseId])
+  @@index([status])
+}
+
+model PurchaseOrderLine {
+  id              String  @id @default(uuid())
+  purchaseOrderId String
+  productId       String
+  quantityOrdered Int
+  unitCost        Decimal @db.Decimal(10, 2)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  product       Product       @relation(fields: [productId], references: [id])
+
+  @@index([purchaseOrderId])
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SUBMITTED
+  RECEIVED
+  CANCELLED
 }
 
 // ─────────────────────────────────────────────────────────────
