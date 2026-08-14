@@ -11,6 +11,9 @@ import DashboardPage from "./pages/DashboardPage";
 import ProductsPage from "./pages/ProductsPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import LedgerPage from "./pages/LedgerPage";
+import SuppliersPage from "./pages/SuppliersPage";
+import PurchaseOrdersPage from "./pages/PurchaseOrdersPage";
+import PurchaseOrderDetailPage from "./pages/PurchaseOrderDetailPage";
 import WarehousesPage from "./pages/WarehousesPage";
 
 function AppRoutes() {
@@ -27,6 +30,9 @@ function AppRoutes() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/ledger" element={<LedgerPage />} />
+          <Route path="/suppliers" element={<SuppliersPage />} />
+          <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+          <Route path="/purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
           <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
             <Route path="/warehouses" element={<WarehousesPage />} />
           </Route>

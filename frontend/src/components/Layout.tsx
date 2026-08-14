@@ -1,7 +1,16 @@
 // client/src/components/Layout.tsx
 
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, Package, Warehouse, LogOut, PackageSearch, BookText } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  Warehouse,
+  LogOut,
+  PackageSearch,
+  BookText,
+  Truck,
+  ClipboardList,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export function Layout() {
@@ -24,6 +33,14 @@ export function Layout() {
           <NavLink to="/products" className={({ isActive }) => (isActive ? "active" : "")}>
             <Package size={18} />
             Products
+          </NavLink>
+          <NavLink to="/purchase-orders" className={({ isActive }) => (isActive ? "active" : "")}>
+            <ClipboardList size={18} />
+            Purchase Orders
+          </NavLink>
+          <NavLink to="/suppliers" className={({ isActive }) => (isActive ? "active" : "")}>
+            <Truck size={18} />
+            Suppliers
           </NavLink>
           <NavLink to="/ledger" className={({ isActive }) => (isActive ? "active" : "")}>
             <BookText size={18} />

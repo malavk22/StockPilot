@@ -438,10 +438,89 @@ select {
   font-size: 13px;
   font-weight: 500;
 }
-.inline-form input {
+.inline-form input,
+.inline-form select {
   padding: 7px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+/* Purchase order status pills — reuse the type-pill look with its own palette */
+.status-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+.status-pill--submitted {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+.status-pill--received {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.status-pill--cancelled {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+/* Purchase order line-item editor */
+.po-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+}
+.po-line-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+.po-line-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+.po-line-row input,
+.po-line-row select {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.btn-danger-text {
+  background: transparent;
+  border: none;
+  color: var(--color-error);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 7px 4px;
+}
+.btn-danger-text:hover {
+  text-decoration: underline;
+}
+.po-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  padding: 6px 0;
+  border-top: 1px solid var(--color-border);
+}
+.po-summary-row.total {
+  color: var(--color-text);
+  font-weight: 700;
 }
 
 /* KPI cards */

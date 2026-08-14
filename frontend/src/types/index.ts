@@ -16,6 +16,13 @@ export interface Warehouse {
   location: string | null;
 }
 
+export interface Supplier {
+  id: string;
+  name: string;
+  contactEmail: string | null;
+  contactPhone: string | null;
+}
+
 export interface Product {
   id: string;
   sku: string;
@@ -24,6 +31,8 @@ export interface Product {
   unit: string;
   price: string; // Decimal serializes as a string
   lowStockThreshold: number;
+  supplierId: string | null;
+  supplier?: { id: string; name: string } | null;
   currentStock: number;
   value: number;
 }
@@ -45,6 +54,35 @@ export interface StockMovement {
   product?: { id: string; sku: string; name: string };
   warehouse?: { id: string; name: string };
   createdBy?: { id: string; email: string };
+}
+
+export type PurchaseOrderStatus = "DRAFT" | "SUBMITTED" | "RECEIVED" | "CANCELLED";
+
+export interface PurchaseOrderLine {
+  id: string;
+  productId: string;
+  quantityOrdered: number;
+  unitCost: string; // Decimal serializes as a string
+  product?: { id: string; sku: string; name: string; unit: string };
+}
+
+export interface PurchaseOrder {
+  id: string;
+  sequenceNumber: number;
+  poNumber: string;
+  supplierId: string;
+  warehouseId: string;
+  status: PurchaseOrderStatus;
+  notes: string | null;
+  createdAt: string;
+  submittedAt: string | null;
+  receivedAt: string | null;
+  cancelledAt: string | null;
+  supplier?: Supplier;
+  warehouse?: Warehouse;
+  createdBy?: { id: string; email: string };
+  receivedBy?: { id: string; email: string } | null;
+  lines: PurchaseOrderLine[];
 }
 
 export interface ApiError {
