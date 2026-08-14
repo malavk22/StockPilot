@@ -8,6 +8,7 @@ import { HTTP_STATUS } from "../constants/http-status.js";
 export async function listProducts() {
   return prisma.product.findMany({
     where: { deletedAt: null },
+    include: { supplier: { select: { id: true, name: true } } },
     orderBy: { name: "asc" },
   });
 }
@@ -19,6 +20,7 @@ export async function createProduct(data: {
   unit: string;
   price: number;
   lowStockThreshold: number;
+  supplierId?: string;
 }) {
   const existing = await prisma.product.findUnique({ where: { sku: data.sku } });
   if (existing) {
@@ -33,7 +35,10 @@ export async function createProduct(data: {
 }
 
 export async function getProductOrThrow(id: string) {
-  const product = await prisma.product.findFirst({ where: { id, deletedAt: null } });
+  const product = await prisma.product.findFirst({
+    where: { id, deletedAt: null },
+    include: { supplier: { select: { id: true, name: true } } },
+  });
 
   if (!product) {
     throw new AppError("Product not found", HTTP_STATUS.NOT_FOUND, ERROR_CODE.RESOURCE_NOT_FOUND);

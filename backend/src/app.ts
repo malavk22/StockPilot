@@ -12,6 +12,8 @@ import warehouseRoutes from "./routes/warehouses.routes.js";
 import productRoutes from "./routes/products.routes.js";
 import stockMovementRoutes from "./routes/stock-movements.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import supplierRoutes from "./routes/suppliers.routes.js";
+import purchaseOrderRoutes from "./routes/purchase-orders.routes.js";
 import { errorHandler } from "./middlewares/error-handler.js";
 import { authMiddleware } from "./middlewares/auth.middleware.js";
 
@@ -43,6 +45,8 @@ app.use("/warehouses", warehouseRoutes);
 app.use("/products", productRoutes);
 app.use("/stock-movements", stockMovementRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/suppliers", supplierRoutes);
+app.use("/purchase-orders", purchaseOrderRoutes);
 
 app.use(errorHandler);
 

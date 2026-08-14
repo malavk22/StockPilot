@@ -99,18 +99,18 @@ model Supplier {
 }
 
 model PurchaseOrder {
-  id           String              @id @default(uuid())
-  poNumber     String              @unique
-  supplierId   String
-  warehouseId  String
-  status       PurchaseOrderStatus @default(DRAFT)
-  notes        String?
-  createdById  String
-  receivedById String?
-  createdAt    DateTime            @default(now())
-  submittedAt  DateTime?
-  receivedAt   DateTime?
-  cancelledAt  DateTime?
+  id             String              @id @default(uuid())
+  sequenceNumber Int                 @unique @default(autoincrement())
+  supplierId     String
+  warehouseId    String
+  status         PurchaseOrderStatus @default(DRAFT)
+  notes          String?
+  createdById    String
+  receivedById   String?
+  createdAt      DateTime            @default(now())
+  submittedAt    DateTime?
+  receivedAt     DateTime?
+  cancelledAt    DateTime?
 
   supplier   Supplier            @relation(fields: [supplierId], references: [id])
   warehouse  Warehouse           @relation(fields: [warehouseId], references: [id])

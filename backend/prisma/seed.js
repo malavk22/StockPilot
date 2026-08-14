@@ -38,7 +38,17 @@ async function main() {
     },
   });
 
-  console.log('✅ Database seeded: 1 admin user, 1 default warehouse');
+  await prisma.supplier.upsert({
+    where: { name: 'Acme Supply Co.' },
+    update: {},
+    create: {
+      name: 'Acme Supply Co.',
+      contactEmail: 'orders@acmesupply.dev',
+      contactPhone: '+1-555-0100',
+    },
+  });
+
+  console.log('✅ Database seeded: 1 admin user, 1 default warehouse, 1 default supplier');
 }
 
 main()
