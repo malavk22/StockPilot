@@ -3,9 +3,17 @@
 import { apiFetch } from "./client";
 import type { MovementType, StockMovement } from "../types";
 
-export function getMovements(token: string, filters?: { productId?: string }) {
-  const qs = filters?.productId ? `?productId=${filters.productId}` : "";
-  return apiFetch<StockMovement[]>(`/stock-movements${qs}`, { token });
+export function getMovements(
+  token: string,
+  filters?: { productId?: string; warehouseId?: string; type?: MovementType; limit?: number }
+) {
+  const params = new URLSearchParams();
+  if (filters?.productId) params.set("productId", filters.productId);
+  if (filters?.warehouseId) params.set("warehouseId", filters.warehouseId);
+  if (filters?.type) params.set("type", filters.type);
+  if (filters?.limit) params.set("limit", String(filters.limit));
+  const qs = params.toString();
+  return apiFetch<StockMovement[]>(`/stock-movements${qs ? `?${qs}` : ""}`, { token });
 }
 
 export function recordMovement(

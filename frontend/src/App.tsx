@@ -10,6 +10,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProductsPage from "./pages/ProductsPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
+import LedgerPage from "./pages/LedgerPage";
 import WarehousesPage from "./pages/WarehousesPage";
 
 function AppRoutes() {
@@ -25,6 +26,7 @@ function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route path="/ledger" element={<LedgerPage />} />
           <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
             <Route path="/warehouses" element={<WarehousesPage />} />
           </Route>
