@@ -7,7 +7,7 @@
 
 import type { ApiError } from "../types";
 
-const BASE_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:5100").replace(/\/$/, "");
+export const BASE_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:5100").replace(/\/$/, "");
 
 export class ApiRequestError extends Error {
   status: number;

@@ -27,6 +27,7 @@ import {
   Settings2,
   ArrowLeftRight,
   DollarSign,
+  FileDown,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -34,6 +35,7 @@ import { getDashboardSummary } from "../api/dashboard.api";
 import { getProducts, createProduct } from "../api/product.api";
 import { getWarehouses } from "../api/warehouse.api";
 import { recordMovement } from "../api/stock.api";
+import { downloadInventoryReport } from "../api/report.api";
 import { getErrorMessage } from "../api/error";
 import { formatCurrency } from "../utils/format";
 import type { DashboardSummary, MovementType, Product, Warehouse } from "../types";
@@ -67,8 +69,22 @@ export default function DashboardPage() {
 
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showRecordMovement, setShowRecordMovement] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
 
   const isAdmin = user?.role === "ADMIN";
+
+  async function handleDownloadReport() {
+    if (!token) return;
+    setDownloadingReport(true);
+    try {
+      await downloadInventoryReport(token);
+      addToast("Report downloaded");
+    } catch (err) {
+      addToast(getErrorMessage(err), "error");
+    } finally {
+      setDownloadingReport(false);
+    }
+  }
 
   async function refresh() {
     if (!token) return;
@@ -106,6 +122,10 @@ export default function DashboardPage() {
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">A live view of your inventory across all warehouses.</p>
         </div>
+        <button className="btn btn-outline" onClick={handleDownloadReport} disabled={downloadingReport}>
+          <FileDown size={16} />
+          {downloadingReport ? "Generating..." : "Download Report"}
+        </button>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
