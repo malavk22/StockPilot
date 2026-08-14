@@ -23,7 +23,10 @@ let productId: string;
 
 beforeEach(async () => {
   // Clean slate for every test — order matters for FK constraints
-  // (StockMovement references Product/Warehouse/User).
+  // (StockMovement references Product/Warehouse/User; PurchaseOrderLine
+  // also references Product, so it has to go before the product wipe too).
+  await prisma.purchaseOrderLine.deleteMany();
+  await prisma.purchaseOrder.deleteMany();
   await prisma.stockMovement.deleteMany();
   await prisma.product.deleteMany();
   await prisma.warehouse.deleteMany();
