@@ -11,10 +11,20 @@ import prisma from "../db.js";
 import { getDashboardSummary } from "./dashboard.service.js";
 import { getLowStockProducts } from "./stock.service.js";
 
+// Palette mirrors the frontend's own design tokens (index.css) so the PDF
+// reads as the same product, not a generic export.
 const PRIMARY = "#4f46e5";
+const PRIMARY_DARK = "#3730a3";
 const TEXT = "#14162b";
 const MUTED = "#6b7089";
 const BORDER = "#e5e7f0";
+const CARD_BG = "#eef2ff";
+const ROW_ALT_BG = "#f7f8fc";
+const WHITE = "#ffffff";
+
+const MARGIN = 50;
+const PAGE_WIDTH = 595.28; // A4 in points
+const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
 function roundToCents(n: number): number {
   return Math.round(n * 100) / 100;
@@ -52,51 +62,65 @@ function drawTable(
   rows: string[][],
   startX: number
 ) {
-  const rowHeight = 20;
+  const rowHeight = 22;
+  const headerHeight = 24;
+  const headerPadTop = 6;
+  const rowPadTop = 6;
+  const tableWidth = columns.reduce((s, c) => s + c.width, 0);
   const bottomMargin = doc.page.margins.bottom;
 
   function drawHeader() {
-    doc.font("Helvetica-Bold").fontSize(9).fillColor(TEXT);
-    // Snapshot y once — text() advances doc.y after each call, so reading
-    // doc.y fresh inside the loop would stack columns vertically instead
-    // of placing them side by side on one row.
-    const y = doc.y;
+    const bandTop = doc.y;
+    doc.rect(startX, bandTop, tableWidth, headerHeight).fill(CARD_BG);
+
+    const textY = bandTop + headerPadTop;
+    doc.font("Helvetica-Bold").fontSize(9).fillColor(PRIMARY_DARK);
     let x = startX;
     for (const col of columns) {
-      doc.text(col.label, x, y, { width: col.width, align: col.align ?? "left" });
+      doc.text(col.label, x + 6, textY, { width: col.width - 10, align: col.align ?? "left" });
       x += col.width;
     }
-    doc.y = y;
-    doc.moveDown(0.6);
-    doc
-      .moveTo(startX, doc.y)
-      .lineTo(startX + columns.reduce((s, c) => s + c.width, 0), doc.y)
-      .strokeColor(BORDER)
-      .stroke();
-    doc.moveDown(0.4);
+    // Advance by the band's actual measured height, not an estimated
+    // font-metric moveDown() — that's what let the first data row creep
+    // up into the shaded header band.
+    doc.y = bandTop + headerHeight;
     doc.x = startX;
   }
 
   drawHeader();
   doc.font("Helvetica").fontSize(9).fillColor(TEXT);
 
-  for (const row of rows) {
+  rows.forEach((row, i) => {
     if (doc.y + rowHeight > doc.page.height - bottomMargin) {
       doc.addPage();
       drawHeader();
       doc.font("Helvetica").fontSize(9).fillColor(TEXT);
     }
 
-    const y = doc.y;
-    let x = startX;
-    for (let i = 0; i < columns.length; i++) {
-      const col = columns[i]!;
-      doc.text(row[i] ?? "", x, y, { width: col.width, align: col.align ?? "left" });
-      x += col.width;
+    const rowTop = doc.y;
+    if (i % 2 === 1) {
+      doc.rect(startX, rowTop, tableWidth, rowHeight).fill(ROW_ALT_BG);
     }
-    doc.y = y;
-    doc.moveDown(0.9);
-  }
+    doc.fillColor(TEXT);
+
+    const textY = rowTop + rowPadTop;
+    let x = startX;
+    for (let col = 0; col < columns.length; col++) {
+      const c = columns[col]!;
+      doc.text(row[col] ?? "", x + 6, textY, { width: c.width - 10, align: c.align ?? "left" });
+      x += c.width;
+    }
+    // Same principle as the header: advance by the fixed row height we
+    // actually drew the zebra rect at, not a font-metric guess.
+    doc.y = rowTop + rowHeight;
+  });
+
+  doc
+    .moveTo(startX, doc.y)
+    .lineTo(startX + tableWidth, doc.y)
+    .strokeColor(BORDER)
+    .stroke();
+  doc.moveDown(0.6);
 
   // Leave the cursor at the left margin, not wherever the last column's
   // explicit x put it — otherwise unpositioned text() calls right after
@@ -106,11 +130,66 @@ function drawTable(
 }
 
 function sectionTitle(doc: PDFKit.PDFDocument, title: string) {
-  doc.x = 50;
+  doc.x = MARGIN;
   doc.moveDown(1);
-  doc.font("Helvetica-Bold").fontSize(13).fillColor(PRIMARY).text(title, 50, doc.y);
-  doc.moveDown(0.3);
-  doc.x = 50;
+  const y = doc.y;
+  doc.rect(MARGIN, y + 1, 4, 12).fill(PRIMARY);
+  doc.font("Helvetica-Bold").fontSize(13).fillColor(TEXT).text(title, MARGIN + 10, y);
+  doc.moveDown(0.5);
+  doc.x = MARGIN;
+}
+
+function drawKpiCards(doc: PDFKit.PDFDocument, cards: Array<{ label: string; value: string }>) {
+  const cols = 3;
+  const gap = 12;
+  const cardWidth = (CONTENT_WIDTH - gap * (cols - 1)) / cols;
+  const cardHeight = 56;
+
+  const startY = doc.y;
+  cards.forEach((card, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = MARGIN + col * (cardWidth + gap);
+    const y = startY + row * (cardHeight + gap);
+
+    doc.roundedRect(x, y, cardWidth, cardHeight, 6).fillAndStroke(CARD_BG, BORDER);
+    doc
+      .font("Helvetica")
+      .fontSize(8.5)
+      .fillColor(MUTED)
+      .text(card.label, x + 12, y + 10, { width: cardWidth - 24 });
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(16)
+      .fillColor(PRIMARY_DARK)
+      .text(card.value, x + 12, y + 26, { width: cardWidth - 24 });
+  });
+
+  const rows = Math.ceil(cards.length / cols);
+  doc.y = startY + rows * cardHeight + (rows - 1) * gap;
+  doc.x = MARGIN;
+  doc.moveDown(1.2);
+}
+
+function drawBanner(doc: PDFKit.PDFDocument) {
+  doc.rect(0, 0, PAGE_WIDTH, 96).fill(PRIMARY);
+  doc.font("Helvetica-Bold").fontSize(24).fillColor(WHITE).text("StockPilot", MARGIN, 28);
+  doc
+    .font("Helvetica")
+    .fontSize(13)
+    .fillColor("#e0e1fa")
+    .text("Inventory Report", MARGIN, 58);
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .fillColor("#c7c9f5")
+    .text(
+      `Generated ${new Date().toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" })}`,
+      MARGIN,
+      78
+    );
+  doc.y = 120;
+  doc.x = MARGIN;
 }
 
 export async function generateInventoryReportPdf(): Promise<Buffer> {
@@ -120,49 +199,32 @@ export async function generateInventoryReportPdf(): Promise<Buffer> {
     getFullInventoryTable(),
   ]);
 
-  const doc = new PDFDocument({ size: "A4", margin: 50, bufferPages: true });
+  const doc = new PDFDocument({ size: "A4", margin: MARGIN, bufferPages: true });
   const chunks: Buffer[] = [];
   doc.on("data", (chunk: Buffer) => chunks.push(chunk));
   const done = new Promise<Buffer>((resolve) => {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
   });
 
-  // ── Header ──────────────────────────────────────────────
-  doc.font("Helvetica-Bold").fontSize(20).fillColor(TEXT).text("StockPilot");
-  doc.font("Helvetica").fontSize(14).fillColor(MUTED).text("Inventory Report");
-  doc
-    .fontSize(9)
-    .fillColor(MUTED)
-    .text(
-      `Generated ${new Date().toLocaleString(undefined, {
-        dateStyle: "long",
-        timeStyle: "short",
-      })}`
-    );
-  doc.moveDown(0.5);
-  doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor(BORDER).stroke();
+  // ── Banner ──────────────────────────────────────────────
+  drawBanner(doc);
 
   // ── Summary KPIs ────────────────────────────────────────
   sectionTitle(doc, "Summary");
-  const kpiPairs: Array<[string, string]> = [
-    ["Total products", String(summary.kpis.totalProducts)],
-    ["Total warehouses", String(summary.kpis.totalWarehouses)],
-    ["Total stock units", String(summary.kpis.totalStockUnits)],
-    ["Total inventory value", formatCurrency(summary.kpis.totalInventoryValue)],
-    ["Low stock items", String(summary.kpis.lowStockCount)],
-    ["Movements today", String(summary.kpis.movementsToday)],
-  ];
-  doc.font("Helvetica").fontSize(10).fillColor(TEXT);
-  for (const [label, value] of kpiPairs) {
-    doc.text(`${label}:`, 50, doc.y, { continued: true, width: 200 });
-    doc.font("Helvetica-Bold").text(`  ${value}`);
-    doc.font("Helvetica");
-  }
+  drawKpiCards(doc, [
+    { label: "Total products", value: String(summary.kpis.totalProducts) },
+    { label: "Total warehouses", value: String(summary.kpis.totalWarehouses) },
+    { label: "Total stock units", value: String(summary.kpis.totalStockUnits) },
+    { label: "Total inventory value", value: formatCurrency(summary.kpis.totalInventoryValue) },
+    { label: "Low stock items", value: String(summary.kpis.lowStockCount) },
+    { label: "Movements today", value: String(summary.kpis.movementsToday) },
+  ]);
 
   // ── Low stock products ──────────────────────────────────
   sectionTitle(doc, `Low Stock Products (${lowStock.length})`);
   if (lowStock.length === 0) {
     doc.font("Helvetica").fontSize(10).fillColor(MUTED).text("Nothing is currently below its threshold.");
+    doc.moveDown(0.6);
   } else {
     drawTable(
       doc,
@@ -173,7 +235,7 @@ export async function generateInventoryReportPdf(): Promise<Buffer> {
         { label: "Threshold", width: 75, align: "right" },
       ],
       lowStock.map((p) => [p.sku, p.name, String(p.currentStock), String(p.lowStockThreshold)]),
-      50
+      MARGIN
     );
   }
 
@@ -181,6 +243,7 @@ export async function generateInventoryReportPdf(): Promise<Buffer> {
   sectionTitle(doc, "Top Products by Movement Volume");
   if (summary.topProducts.length === 0) {
     doc.font("Helvetica").fontSize(10).fillColor(MUTED).text("No stock movements recorded yet.");
+    doc.moveDown(0.6);
   } else {
     drawTable(
       doc,
@@ -190,7 +253,7 @@ export async function generateInventoryReportPdf(): Promise<Buffer> {
         { label: "Volume", width: 85, align: "right" },
       ],
       summary.topProducts.map((p) => [p.sku, p.name, String(p.volume)]),
-      50
+      MARGIN
     );
   }
 
@@ -203,7 +266,7 @@ export async function generateInventoryReportPdf(): Promise<Buffer> {
       { label: "Count", width: 100, align: "right" },
     ],
     summary.movementsByType.map((m) => [m.type.replace("_", " "), String(m.count)]),
-    50
+    MARGIN
   );
 
   // ── Full inventory ───────────────────────────────────────
@@ -226,10 +289,10 @@ export async function generateInventoryReportPdf(): Promise<Buffer> {
       String(p.currentStock),
       formatCurrency(p.value),
     ]),
-    50
+    MARGIN
   );
 
-  // ── Footer: page numbers on every page ───────────────────
+  // ── Footer: brand + page numbers on every page ───────────
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
@@ -242,16 +305,25 @@ export async function generateInventoryReportPdf(): Promise<Buffer> {
     // write turns that check off without affecting page layout.
     const bottomMargin = doc.page.margins.bottom;
     doc.page.margins.bottom = 0;
+
+    doc.moveTo(MARGIN, doc.page.height - 46).lineTo(PAGE_WIDTH - MARGIN, doc.page.height - 46).strokeColor(BORDER).stroke();
     doc
       .font("Helvetica")
       .fontSize(8)
       .fillColor(MUTED)
-      .text(
-        `StockPilot — append-only inventory ledger  ·  Page ${i + 1} of ${range.count}`,
-        50,
-        doc.page.height - 35,
-        { width: 495, align: "center" }
-      );
+      .text("StockPilot — append-only inventory ledger", MARGIN, doc.page.height - 35, {
+        width: 300,
+        align: "left",
+      });
+    doc
+      .font("Helvetica")
+      .fontSize(8)
+      .fillColor(MUTED)
+      .text(`Page ${i + 1} of ${range.count}`, PAGE_WIDTH - MARGIN - 195, doc.page.height - 35, {
+        width: 195,
+        align: "right",
+      });
+
     doc.page.margins.bottom = bottomMargin;
   }
 
