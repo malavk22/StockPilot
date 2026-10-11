@@ -19,7 +19,11 @@ export default function WarehousesPage() {
 
   async function refresh() {
     if (!token) return;
-    setWarehouses(await getWarehouses(token));
+    try {
+      setWarehouses(await getWarehouses(token));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   }
 
   useEffect(() => {

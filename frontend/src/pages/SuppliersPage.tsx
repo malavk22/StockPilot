@@ -22,7 +22,11 @@ export default function SuppliersPage() {
 
   async function refresh() {
     if (!token) return;
-    setSuppliers(await getSuppliers(token));
+    try {
+      setSuppliers(await getSuppliers(token));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   }
 
   useEffect(() => {
