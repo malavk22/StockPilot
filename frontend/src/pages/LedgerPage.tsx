@@ -12,16 +12,8 @@ import { getMovements } from "../api/stock.api";
 import { getProducts } from "../api/product.api";
 import { getWarehouses } from "../api/warehouse.api";
 import { getErrorMessage } from "../api/error";
+import { TYPE_FILTERS } from "../constants/movement-type-filters";
 import type { MovementType, Product, StockMovement, Warehouse } from "../types";
-
-const TYPE_FILTERS: Array<{ value: MovementType | "ALL"; label: string }> = [
-  { value: "ALL", label: "All types" },
-  { value: "IN", label: "Stock In" },
-  { value: "OUT", label: "Stock Out" },
-  { value: "ADJUSTMENT", label: "Adjustment" },
-  { value: "TRANSFER_IN", label: "Transfer In" },
-  { value: "TRANSFER_OUT", label: "Transfer Out" },
-];
 
 export default function LedgerPage() {
   const { token } = useAuth();

@@ -12,16 +12,8 @@ import { getErrorMessage } from "../api/error";
 import { formatCurrency } from "../utils/format";
 import { MovementFormModal } from "../components/MovementFormModal";
 import { TransferFormModal } from "../components/TransferFormModal";
+import { TYPE_FILTERS } from "../constants/movement-type-filters";
 import type { MovementType, ProductDetail, StockMovement, Warehouse } from "../types";
-
-const TYPE_FILTERS: Array<{ value: MovementType | "ALL"; label: string }> = [
-  { value: "ALL", label: "All types" },
-  { value: "IN", label: "Stock In" },
-  { value: "OUT", label: "Stock Out" },
-  { value: "ADJUSTMENT", label: "Adjustment" },
-  { value: "TRANSFER_IN", label: "Transfer In" },
-  { value: "TRANSFER_OUT", label: "Transfer Out" },
-];
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
