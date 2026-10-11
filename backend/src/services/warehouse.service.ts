@@ -13,6 +13,15 @@ export async function listWarehouses() {
 }
 
 export async function createWarehouse(data: { name: string; location?: string }) {
+  const existing = await prisma.warehouse.findUnique({ where: { name: data.name } });
+  if (existing) {
+    throw new AppError(
+      `A warehouse named "${data.name}" already exists`,
+      HTTP_STATUS.CONFLICT,
+      ERROR_CODE.RESOURCE_CONFLICT
+    );
+  }
+
   return prisma.warehouse.create({ data });
 }
 
