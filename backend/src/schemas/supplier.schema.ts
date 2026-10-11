@@ -6,5 +6,3 @@ export const createSupplierSchema = z.object({
   contactEmail: z.string().trim().email().max(200).optional(),
   contactPhone: z.string().trim().max(50).optional(),
 });
-
-export const updateSupplierSchema = createSupplierSchema.partial();

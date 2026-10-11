@@ -10,5 +10,3 @@ export const createProductSchema = z.object({
   lowStockThreshold: z.number().int().min(0).default(0),
   supplierId: z.string().uuid("Invalid supplier id").optional(),
 });
-
-export const updateProductSchema = createProductSchema.partial();

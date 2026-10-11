@@ -11,13 +11,6 @@ export function getProductById(token: string, id: string) {
   return apiFetch<ProductDetail>(`/products/${id}`, { token });
 }
 
-export function getLowStockProducts(token: string) {
-  return apiFetch<Array<{ id: string; sku: string; name: string; lowStockThreshold: number; currentStock: number }>>(
-    "/products/low-stock",
-    { token }
-  );
-}
-
 export function createProduct(
   token: string,
   input: {
