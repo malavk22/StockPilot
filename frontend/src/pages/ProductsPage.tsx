@@ -1,14 +1,15 @@
 // client/src/pages/ProductsPage.tsx
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, ArrowLeftRight, PackagePlus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { getProducts, createProduct } from "../api/product.api";
+import { getProducts } from "../api/product.api";
 import { getWarehouses } from "../api/warehouse.api";
 import { getErrorMessage } from "../api/error";
 import { formatCurrency } from "../utils/format";
+import { AddProductModal } from "../components/AddProductModal";
 import { MovementFormModal } from "../components/MovementFormModal";
 import { TransferFormModal } from "../components/TransferFormModal";
 import type { Product, Warehouse } from "../types";
@@ -61,9 +62,9 @@ export default function ProductsPage() {
           <p className="page-subtitle">Manage your catalog and track stock across warehouses.</p>
         </div>
         {isAdmin && (
-          <button className="btn btn-primary" onClick={() => setShowAddProduct((v) => !v)}>
+          <button className="btn btn-primary" onClick={() => setShowAddProduct(true)}>
             <Plus size={16} />
-            {showAddProduct ? "Cancel" : "Add Product"}
+            Add Product
           </button>
         )}
       </div>
@@ -75,18 +76,6 @@ export default function ProductsPage() {
           ⚠️ {lowStockProducts.length} product{lowStockProducts.length > 1 ? "s" : ""} running low:{" "}
           {lowStockProducts.map((p) => p.name).join(", ")}
         </div>
-      )}
-
-      {showAddProduct && (
-        <AddProductForm
-          token={token!}
-          onCreated={() => {
-            setShowAddProduct(false);
-            addToast("Product added");
-            refresh();
-          }}
-          onError={setError}
-        />
       )}
 
       <div className="card">
@@ -169,70 +158,18 @@ export default function ProductsPage() {
           }}
         />
       )}
+
+      {showAddProduct && (
+        <AddProductModal
+          token={token!}
+          onClose={() => setShowAddProduct(false)}
+          onCreated={() => {
+            setShowAddProduct(false);
+            addToast("Product added");
+            refresh();
+          }}
+        />
+      )}
     </div>
-  );
-}
-
-function AddProductForm({
-  token,
-  onCreated,
-  onError,
-}: {
-  token: string;
-  onCreated: () => void;
-  onError: (msg: string) => void;
-}) {
-  const [sku, setSku] = useState("");
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState(0);
-  const [lowStockThreshold, setLowStockThreshold] = useState(5);
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await createProduct(token, { sku, name, price, lowStockThreshold });
-      onCreated();
-    } catch (err) {
-      onError(getErrorMessage(err));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <form className="inline-form card" onSubmit={handleSubmit}>
-      <label>
-        SKU
-        <input value={sku} onChange={(e) => setSku(e.target.value)} required />
-      </label>
-      <label>
-        Name
-        <input value={name} onChange={(e) => setName(e.target.value)} required />
-      </label>
-      <label>
-        Unit price
-        <input
-          type="number"
-          min={0}
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(Number(e.target.value))}
-        />
-      </label>
-      <label>
-        Low stock threshold
-        <input
-          type="number"
-          min={0}
-          value={lowStockThreshold}
-          onChange={(e) => setLowStockThreshold(Number(e.target.value))}
-        />
-      </label>
-      <button type="submit" className="btn btn-primary" disabled={submitting}>
-        {submitting ? "Adding..." : "Add product"}
-      </button>
-    </form>
   );
 }

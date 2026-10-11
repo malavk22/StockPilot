@@ -1,6 +1,6 @@
 // client/src/pages/DashboardPage.tsx
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -25,20 +25,20 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Settings2,
-  ArrowLeftRight,
   DollarSign,
   FileDown,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { getDashboardSummary } from "../api/dashboard.api";
-import { getProducts, createProduct } from "../api/product.api";
+import { getProducts } from "../api/product.api";
 import { getWarehouses } from "../api/warehouse.api";
-import { recordMovement } from "../api/stock.api";
 import { downloadInventoryReport } from "../api/report.api";
 import { getErrorMessage } from "../api/error";
 import { formatCurrency } from "../utils/format";
-import type { DashboardSummary, MovementType, Product, Warehouse } from "../types";
+import { AddProductModal } from "../components/AddProductModal";
+import { MovementFormModal } from "../components/MovementFormModal";
+import type { DashboardSummary, Product, Warehouse } from "../types";
 
 const MOVEMENT_TYPE_COLORS: Record<string, string> = {
   IN: "var(--color-success)",
@@ -120,7 +120,7 @@ export default function DashboardPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">A live view of your inventory across all warehouses.</p>
+          <p className="page-subtitle">An overview of your inventory across all warehouses.</p>
         </div>
         <button className="btn btn-outline" onClick={handleDownloadReport} disabled={downloadingReport}>
           <FileDown size={16} />
@@ -286,7 +286,7 @@ export default function DashboardPage() {
       </div>
 
       {showAddProduct && (
-        <QuickAddProductModal
+        <AddProductModal
           token={token!}
           onClose={() => setShowAddProduct(false)}
           onCreated={() => {
@@ -298,7 +298,7 @@ export default function DashboardPage() {
       )}
 
       {showRecordMovement && (
-        <QuickRecordMovementModal
+        <MovementFormModal
           token={token!}
           products={products}
           warehouses={warehouses}
@@ -334,199 +334,6 @@ function KpiCard({
         <div className="kpi-value">{currency ? formatCurrency(value) : value.toLocaleString()}</div>
         <div className="kpi-label">{label}</div>
       </div>
-    </div>
-  );
-}
-
-function QuickAddProductModal({
-  token,
-  onClose,
-  onCreated,
-}: {
-  token: string;
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const [sku, setSku] = useState("");
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState(0);
-  const [lowStockThreshold, setLowStockThreshold] = useState(5);
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-    try {
-      await createProduct(token, { sku, name, price, lowStockThreshold });
-      onCreated();
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <form className="modal-card" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <h3>Add Product</h3>
-        {error && <div className="alert alert-error">{error}</div>}
-        <label>
-          SKU
-          <input value={sku} onChange={(e) => setSku(e.target.value)} required />
-        </label>
-        <label>
-          Name
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          Unit price
-          <input
-            type="number"
-            min={0}
-            step="0.01"
-            value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
-          />
-        </label>
-        <label>
-          Low stock threshold
-          <input
-            type="number"
-            min={0}
-            value={lowStockThreshold}
-            onChange={(e) => setLowStockThreshold(Number(e.target.value))}
-          />
-        </label>
-        <div className="modal-actions">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? "Adding..." : "Add product"}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function QuickRecordMovementModal({
-  token,
-  products,
-  warehouses,
-  onClose,
-  onRecorded,
-}: {
-  token: string;
-  products: Product[];
-  warehouses: Warehouse[];
-  onClose: () => void;
-  onRecorded: () => void;
-}) {
-  const [productId, setProductId] = useState(products[0]?.id ?? "");
-  const [type, setType] = useState<MovementType>("IN");
-  const [warehouseId, setWarehouseId] = useState(warehouses[0]?.id ?? "");
-  const [quantity, setQuantity] = useState(1);
-  const [reason, setReason] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!productId) {
-      setError("Add a product first.");
-      return;
-    }
-    if (type === "ADJUSTMENT" && !reason.trim()) {
-      setError("A reason is required for manual adjustments.");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      await recordMovement(token, {
-        type: type as "IN" | "OUT" | "ADJUSTMENT",
-        productId,
-        warehouseId,
-        quantity: type === "ADJUSTMENT" ? quantity : Math.abs(quantity),
-        reason: reason || undefined,
-      });
-      onRecorded();
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <form className="modal-card" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <h3>
-          <ArrowLeftRight size={16} /> Record Movement
-        </h3>
-        {error && <div className="alert alert-error">{error}</div>}
-
-        <label>
-          Product
-          <select value={productId} onChange={(e) => setProductId(e.target.value)} required>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.sku})
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Type
-          <select value={type} onChange={(e) => setType(e.target.value as MovementType)}>
-            <option value="IN">Stock In (received)</option>
-            <option value="OUT">Stock Out (sold/used)</option>
-            <option value="ADJUSTMENT">Adjustment (correction)</option>
-          </select>
-        </label>
-
-        <label>
-          Warehouse
-          <select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} required>
-            {warehouses.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          {type === "ADJUSTMENT" ? "Quantity delta (+/-)" : "Quantity"}
-          <input
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
-            required
-          />
-        </label>
-
-        <label>
-          Reason {type === "ADJUSTMENT" && "(required)"}
-          <input value={reason} onChange={(e) => setReason(e.target.value)} />
-        </label>
-
-        <div className="modal-actions">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? "Saving..." : "Save"}
-          </button>
-        </div>
-      </form>
     </div>
   );
 }
