@@ -10,6 +10,7 @@ import PDFDocument from "pdfkit";
 import prisma from "../db.js";
 import { getDashboardSummary } from "./dashboard.service.js";
 import { getLowStockProducts } from "./stock.service.js";
+import { roundToCents } from "../utils/money.js";
 
 // Palette mirrors the frontend's own design tokens (index.css) so the PDF
 // reads as the same product, not a generic export.
@@ -25,10 +26,6 @@ const WHITE = "#ffffff";
 const MARGIN = 50;
 const PAGE_WIDTH = 595.28; // A4 in points
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
-
-function roundToCents(n: number): number {
-  return Math.round(n * 100) / 100;
-}
 
 function formatCurrency(n: number): string {
   return `$${roundToCents(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

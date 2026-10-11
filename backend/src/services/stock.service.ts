@@ -174,6 +174,20 @@ export async function getCurrentStock(productId: string, warehouseId?: string) {
 }
 
 /**
+ * Current stock for every product (summed across all warehouses), keyed by
+ * product id, in a single grouped query — so listing N products costs one
+ * query instead of one per product. Products with no movements are absent;
+ * callers should treat a missing id as 0.
+ */
+export async function getCurrentStockByProduct(): Promise<Map<string, number>> {
+  const rows = await prisma.stockMovement.groupBy({
+    by: ["productId"],
+    _sum: { quantity: true },
+  });
+  return new Map(rows.map((r) => [r.productId, r._sum.quantity ?? 0]));
+}
+
+/**
  * A product's stock broken down by warehouse (only warehouses that have at
  * least one movement for this product are included). Feeds the product
  * detail page's "where is this actually sitting" view.

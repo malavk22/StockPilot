@@ -12,6 +12,7 @@ import {
   recordMovement,
   transferStock,
   getCurrentStock,
+  getCurrentStockByProduct,
   getLowStockProducts,
 } from "../../src/services/stock.service.js";
 import { AppError } from "../../src/errors/app-error.js";
@@ -124,6 +125,22 @@ describe("transferStock", () => {
     // Neither leg of the transfer should have been written.
     expect(await getCurrentStock(productId, warehouseId)).toBe(3);
     expect(await getCurrentStock(productId, secondWarehouseId)).toBe(0);
+  });
+});
+
+describe("getCurrentStockByProduct", () => {
+  it("returns each product's total across warehouses, and omits products with no movements", async () => {
+    await recordMovement({ type: "IN", productId, warehouseId, quantity: 10 }, userId);
+    await transferStock(
+      { productId, fromWarehouseId: warehouseId, toWarehouseId: secondWarehouseId, quantity: 4 },
+      userId
+    );
+    const untouched = await prisma.product.create({ data: { sku: "TEST-SKU-3", name: "Untouched" } });
+
+    const stock = await getCurrentStockByProduct();
+
+    expect(stock.get(productId)).toBe(10);
+    expect(stock.has(untouched.id)).toBe(false);
   });
 });
 
